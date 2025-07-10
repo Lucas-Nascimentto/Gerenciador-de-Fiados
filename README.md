@@ -1,6 +1,6 @@
 # 📊 Gerenciador de Fiados
 
-Uma aplicação web simples e intuitiva para controle de vendas fiadas — idealizada para substituir os tradicionais cadernos de anotações em pequenos comércios, como a padaria do meu pai.
+Uma aplicação web simples e intuitiva para controle de vendas fiadas — idealizada para substituir os tradicionais cadernos de anotações em comércios, como a padaria do meu pai.
 
 > ✅ Desenvolvido com **Python**, **Streamlit** e armazenamento em **Excel**.
 
@@ -35,13 +35,11 @@ Uma aplicação web simples e intuitiva para controle de vendas fiadas — ideal
 
 ## 📁 Estrutura do Projeto
 
--   📂 Gerenciador-de-Fiados/
-    │
-    ├── 📄 app.py                # Código principal da aplicação
-    ├── 📁 dados/                # Arquivos Excel usados como "banco de dados"
-    ├── 📄 requirements.txt      # Dependências do projeto
-    ├── 📄 README.md             # Este arquivo
-    └── 📁 imagens/              # Screenshots do sistema
+-   📂 Gerenciador-de-Fiados 
+- ├── 📄 app.py              
+- ├──📄 requirements.txt     
+- ├──📄 README.md            
+- ├──📁 imagens/             
 
 ## 📌 Futuras Melhorias
 
