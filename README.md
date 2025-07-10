@@ -54,10 +54,13 @@ Uma aplicação web simples e intuitiva para controle de vendas fiadas — ideal
 ---
 
 ## 🙋‍♂️ Autor
-- Desenvolvido por Lucas Nascimento 👨‍💻
+
+- Desenvolvido por **Lucas Nascimento** 👨‍💻  
 - Estudante de Engenharia da Computação | Desenvolvedor Full Stack
 
-- 🔗 LinkedIn • 🐙 GitHub
+- [🔗 LinkedIn](https://www.linkedin.com/in/lucas-almeida-software-developer/)  
+- [🐙 GitHub](https://github.com/Lucas-Nascimentto)
+
 
 ---
 
