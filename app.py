@@ -4,41 +4,55 @@ import os
 import time
 from datetime import datetime
 import altair as alt
+from conexao import get_connection
+from dotenv import load_dotenv
+
+
+load_dotenv()  # carrega as variáveis do .env para o ambiente
 
 # Configurações iniciais
 st.set_page_config(layout="centered", page_title="Gerenciador de Fiados", page_icon='none', initial_sidebar_state='auto')
 
-# Função para verificar login
+# Verifica login fixo
 def check_login(username, password):
     return username == "admin" and password == "admin"
 
-# Função para carregar ou criar o arquivo Excel
-def load_or_create_excel():
-    if not os.path.exists("vendasFiado.xlsx"):
-        df = pd.DataFrame(columns=["Fiador", "Valor", "Data"])
-        df.to_excel("vendasFiado.xlsx", index=False)
-        return df
-    return pd.read_excel("vendasFiado.xlsx")
-
-# Função para quitar a dívida de um fiador
-def pay_debt(fiador):
-    df = load_or_create_excel()
-    df = df[df["Fiador"] != fiador]  # Remove as entradas do fiador
-    df.to_excel("vendasFiado.xlsx", index=False)  # Salva as alterações
+# Carrega todas as vendas
+def load_vendas():
+    conn = get_connection()
+    df = pd.read_sql("SELECT * FROM vendas", conn)
+    conn.close()
     return df
 
-# Main app flow
+# Adiciona nova venda
+def adicionar_venda(fiador, valor, data):
+    conn = get_connection()
+    cursor = conn.cursor()
+    query = "INSERT INTO vendas (fiador, valor, data) VALUES (%s, %s, %s)"
+    cursor.execute(query, (fiador, valor, data))
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+# Quita a dívida de um fiador (remove todos os registros dele)
+def pay_debt(fiador):
+    conn = get_connection()
+    cursor = conn.cursor()
+    query = "DELETE FROM vendas WHERE fiador = %s"
+    cursor.execute(query, (fiador,))
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+# Página principal
 def main():
     if not hasattr(st.session_state, "logged_in"):
         st.session_state.logged_in = False
     
     if st.session_state.logged_in:
-        # Sidebar menu
         selected = st.sidebar.selectbox("Menu de Ações:", ["Adicionar Venda", "Relatórios", "Quitar Dívida"])
         
         if selected == "Adicionar Venda":
-            df = load_or_create_excel()
-            
             with st.form("nova_venda_form"):
                 st.header("Nova Venda Fiada")
                 fiador = st.text_input("Nome do Fiador")
@@ -49,34 +63,32 @@ def main():
                 
                 if submitted:
                     if fiador and valor and data:
-                        new_row = pd.DataFrame({"Fiador": [fiador], "Valor": [valor], "Data": [data.strftime("%Y-%m-%d")]})
-                        df = pd.concat([df, new_row], ignore_index=True)
-                        df.to_excel("vendasFiado.xlsx", index=False)
+                        adicionar_venda(fiador, valor, data)
                         st.success("Venda adicionada com sucesso!")
                         time.sleep(1)
                         st.rerun()
 
             st.header("Histórico de Vendas Fiadas")
+            df = load_vendas()
             st.dataframe(df)
 
         elif selected == "Relatórios":
-            df = pd.read_excel("vendasFiado.xlsx") if os.path.exists("vendasFiado.xlsx") else pd.DataFrame()
+            df = load_vendas()
             
             if not df.empty:
                 st.header("Relatório de Saldos Devedores")
-                saldos = df.groupby("Fiador")["Valor"].sum().reset_index()
-                saldos = saldos.sort_values("Valor", ascending=False)
+                saldos = df.groupby("fiador")["valor"].sum().reset_index()
+                saldos = saldos.sort_values("valor", ascending=False)
                 
                 st.subheader("Saldos Devedores por Fiador")
 
-                # Criação do gráfico com Altair
                 chart = alt.Chart(saldos).mark_bar(
                     cornerRadiusTopLeft=5,
                     cornerRadiusTopRight=5
                 ).encode(
-                    y=alt.Y('Valor:Q', title='Valor Total (R$)', axis=alt.Axis(grid=False)),
-                    x=alt.X('Fiador:N', sort='-x', title='Fiador'),
-                    tooltip=['Fiador', 'Valor']
+                    y=alt.Y('valor:Q', title='Valor Total (R$)', axis=alt.Axis(grid=False)),
+                    x=alt.X('fiador:N', sort='-x', title='Fiador'),
+                    tooltip=['fiador', 'valor']
                 ).properties(
                     width=700,
                     height=400,
@@ -90,8 +102,6 @@ def main():
                 )
 
                 st.altair_chart(chart, use_container_width=True)
-
-                # Tabela abaixo do gráfico
                 st.dataframe(saldos)
             else:
                 st.header("Relatório de Saldos Devedores")
@@ -99,15 +109,15 @@ def main():
 
         elif selected == "Quitar Dívida":
             st.title("Quitar Dívida do Fiador")
-            df = load_or_create_excel()
+            df = load_vendas()
             
             if not df.empty:
-                fiador_selecionado = st.selectbox("Selecione o Fiador", df["Fiador"].unique())
+                fiador_selecionado = st.selectbox("Selecione o Fiador", df["fiador"].unique())
                 
                 if st.button("Quitar Dívida"):
                     pay_debt(fiador_selecionado)
                     st.success(f"Dívida do fiador '{fiador_selecionado}' quitada com sucesso!")
-                    time.sleep(1) 
+                    time.sleep(1)
                     st.rerun()
             else:
                 st.info("Nenhuma venda fiada registrada para quitar.")
@@ -115,7 +125,7 @@ def main():
     else:
         login_page()
 
-# Login page
+# Página de login
 def login_page():
     st.title("Login")
     username = st.text_input(label="Usuário", placeholder="admin")
